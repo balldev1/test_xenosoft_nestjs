@@ -36,10 +36,10 @@ export class QuotesService {
     }
 
     // Filter voted/not_voted by user
-    if (query.filter === 'voted' && query.userId) {
-      filters.votes = { $elemMatch: { user: query.userId } };
-    } else if (query.filter === 'not_voted' && query.userId) {
-      filters.votes = { $not: { $elemMatch: { user: query.userId } } };
+    if (query.filter === 'voted') {
+      filters.upvotes = { $gt: 0 };
+    } else if (query.filter === 'not_voted') {
+      filters.downvotes = { $gt: 0 };
     }
 
     const quotes = await this.quoteModel
@@ -74,6 +74,27 @@ export class QuotesService {
       downvotes: 0,
     });
     return newQuote.save();
+  }
+
+  async update(
+    id: string,
+    data: { text?: string; author?: string },
+  ): Promise<Quote | null> {
+    if (data.text !== undefined && data.text.trim() === '') {
+      throw new BadRequestException('Quote text cannot be empty');
+    }
+
+    const updatedQuote = await this.quoteModel.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true },
+    );
+
+    if (!updatedQuote) {
+      throw new BadRequestException('Quote not found');
+    }
+
+    return updatedQuote;
   }
 
   async upvote(quoteId: string, userId: string): Promise<Quote | null> {
@@ -162,5 +183,17 @@ export class QuotesService {
     await quote.save();
 
     return quote;
+  }
+
+  async delete(id: string): Promise<{ deleted: boolean }> {
+    const result = await this.quoteModel.deleteOne({ _id: id }).exec();
+    if (result.deletedCount === 0) {
+      throw new BadRequestException('Quote not found or already deleted');
+    }
+
+    // ลบโหวตที่เกี่ยวข้องทั้งหมด
+    await this.voteModel.deleteMany({ quoteId: id }).exec();
+
+    return { deleted: true };
   }
 }

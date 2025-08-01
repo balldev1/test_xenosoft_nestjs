@@ -22,11 +22,24 @@ export class AuthController {
     // เซ็ต cookie
     res.cookie('jwt', result.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      // secure: process.env.NODE_ENV === 'production',
+      secure: false,
       maxAge: 24 * 60 * 60 * 1000, // 1 วัน
-      sameSite: 'strict',
+      sameSite: 'lax',
     });
     // return { message: 'Login successful' };
-    return { message: result.access_token };
+    return { message: 'Login successful' };
+  }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response) {
+    // ลบ cookie jwt โดยเซ็ตค่าว่างและ expire ทันที
+    res.cookie('jwt', '', {
+      httpOnly: true,
+      secure: false,
+      expires: new Date(0),
+      sameSite: 'lax',
+    });
+    return { message: 'Logout successful' };
   }
 }

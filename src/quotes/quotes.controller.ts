@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { QuotesService } from './quotes.service';
 
@@ -47,6 +48,15 @@ export class QuotesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body: { text?: string; author?: string },
+  ) {
+    return this.quotesService.update(id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/upvote')
   async upvote(@Param('id') id: string, @Req() req) {
     const userId = req.user.userId;
@@ -58,5 +68,11 @@ export class QuotesController {
   async downvote(@Param('id') id: string, @Req() req) {
     const userId = req.user.userId;
     return this.quotesService.downvote(id, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    return this.quotesService.delete(id);
   }
 }

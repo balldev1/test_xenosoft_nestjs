@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -12,7 +12,7 @@ export class AuthService {
 
   async register(username: string, password: string) {
     const existing = await this.usersService.findByUsername(username);
-    if (existing) throw new UnauthorizedException('User already exists');
+    if (existing) throw new BadRequestException('User already exists');
 
     const hashed = await bcrypt.hash(password, 10);
     const user: any = await this.usersService.create({
@@ -30,14 +30,18 @@ export class AuthService {
     const user: any = await this.usersService.findByUsername(
       userInput.username,
     );
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!user) throw new BadRequestException('User not found');
 
     const valid = await bcrypt.compare(userInput.password, user.password);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
+    if (!valid) throw new BadRequestException('Invalid credentials');
 
     const payload = { username: user.username, sub: user._id };
     return {
       access_token: this.jwtService.sign(payload),
     };
+  }
+
+  async logout() {
+    return { message: 'Logout successful' };
   }
 }
